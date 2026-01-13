@@ -79,8 +79,21 @@ function loadStage() {
     document.addEventListener("paste", prevent);
     document.addEventListener("copy", prevent);
     document.addEventListener("cut", prevent);
-    window.onblur = () =>
-      alert("Please remain on this tab while completing the task.");
+
+    let tabBlurred = false;
+
+    window.addEventListener("blur", () => {
+      const stage = stages[stageIndex];
+      if (!stage || stage.allowAI) return;
+
+      tabBlurred = true;
+      document.getElementById("focus-warning").hidden = false;
+    });
+
+    window.addEventListener("focus", () => {
+      tabBlurred = false;
+      document.getElementById("focus-warning").hidden = true;
+    });
   } else {
     document.removeEventListener("paste", prevent);
     document.removeEventListener("copy", prevent);
@@ -89,16 +102,10 @@ function loadStage() {
   }
 }
 
-/* =====================
-   KEYSTROKE LOGGING
-===================== */
 responseEl.addEventListener("keydown", () => {
   keystrokes.push(Date.now());
 });
 
-/* =====================
-   SUBMIT RESPONSE
-===================== */
 document.getElementById("submit").onclick = async () => {
   const stage = stages[stageIndex];
   const text = responseEl.value.trim();
