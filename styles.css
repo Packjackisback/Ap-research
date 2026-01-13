@@ -1,0 +1,23 @@
+body {
+  font-family: system-ui, sans-serif;
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 180px;
+  margin-bottom: 10px;
+}
+
+#chatbot {
+  border-top: 1px solid #ccc;
+  margin-top: 20px;
+  padding-top: 10px;
+}
+
+button {
+  padding: 10px 16px;
+  font-size: 16px;
+}

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Research Writing Study</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <h1>Writing Task</h1>
+
+  <div id="stage-indicator"></div>
+  <p id="prompt"></p>
+
+  <textarea id="response" placeholder="Write your paragraph here..."></textarea>
+
+  <div id="certify-box">
+    <label>
+      <input type="checkbox" id="certify">
+      I certify this response is written according to the instructions for this stage.
+    </label>
+  </div>
+
+  <div id="chatbot" hidden>
+    <h3>Chatbot (Allowed in this stage)</h3>
+    <textarea id="chatInput" placeholder="Ask the chatbot..."></textarea>
+    <button id="chatSend">Send</button>
+    <pre id="chatOutput"></pre>
+  </div>
+
+  <button id="submit">Submit Response</button>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
