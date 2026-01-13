@@ -2,10 +2,11 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const SUPABASE_URL = "https://aifumynkocrvizeccwtb.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_R0uHqn-OqznkKVURp2zFwA_GERBW8FT";
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const HACKCLUB_API_KEY =
   "sk-hc-v1-b443235639074582be4eeb1ffe9a184a408c474eb4a246c89d48c494dcba893c";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const participantId = crypto.randomUUID();
 
 const stages = [
   {
@@ -15,7 +16,7 @@ const stages = [
   },
   {
     id: 2,
-    prompt: "Discuss your views on remote work. You may use the chatbot.",
+    prompt: "Discuss your views on remote work. You may use the chatbot below.",
     allowAI: true,
   },
   {
@@ -26,64 +27,95 @@ const stages = [
 ];
 
 let stageIndex = 0;
-let startTime = Date.now();
+let startTime = 0;
 let keystrokes = [];
 
-const promptEl = document.getElementById("prompt");
+const consentScreen = document.getElementById("consent-screen");
+const taskScreen = document.getElementById("task-screen");
+const questionnaireScreen = document.getElementById("questionnaire-screen");
+
 const stageEl = document.getElementById("stage-indicator");
+const promptEl = document.getElementById("prompt");
 const responseEl = document.getElementById("response");
 const certifyEl = document.getElementById("certify");
+const certifyBox = document.getElementById("certify-box");
+
 const chatbotEl = document.getElementById("chatbot");
 const chatInput = document.getElementById("chatInput");
 const chatOutput = document.getElementById("chatOutput");
 
-function loadStage() {
-  const stage = stages[stageIndex];
-  stageEl.innerText = `Stage ${stage.id}`;
-  promptEl.innerText = stage.prompt;
-  responseEl.value = "";
-  certifyEl.checked = false;
-  keystrokes = [];
-  startTime = Date.now();
-
-  chatbotEl.hidden = !stage.allowAI;
-  document.getElementById("certify-box").hidden = stage.allowAI;
-
-  if (!stage.allowAI) {
-    document.addEventListener("paste", prevent);
-    document.addEventListener("copy", prevent);
-    window.onblur = () => alert("Please stay on this tab.");
-  } else {
-    document.removeEventListener("paste", prevent);
-    document.removeEventListener("copy", prevent);
-    window.onblur = null;
+document.getElementById("consent-continue").onclick = () => {
+  if (!document.getElementById("consent-checkbox").checked) {
+    alert("You must consent to participate.");
+    return;
   }
-}
+  consentScreen.hidden = true;
+  taskScreen.hidden = false;
+  loadStage();
+};
 
 function prevent(e) {
   e.preventDefault();
 }
 
+function loadStage() {
+  const stage = stages[stageIndex];
+
+  stageEl.innerText = `Stage ${stage.id}`;
+  promptEl.innerText = stage.prompt;
+
+  responseEl.value = "";
+  certifyEl.checked = false;
+  chatInput.value = "";
+  chatOutput.innerText = "";
+
+  keystrokes = [];
+  startTime = Date.now();
+
+  chatbotEl.hidden = !stage.allowAI;
+  certifyBox.hidden = stage.allowAI;
+
+  if (!stage.allowAI) {
+    document.addEventListener("paste", prevent);
+    document.addEventListener("copy", prevent);
+    document.addEventListener("cut", prevent);
+    window.onblur = () =>
+      alert("Please remain on this tab while completing the task.");
+  } else {
+    document.removeEventListener("paste", prevent);
+    document.removeEventListener("copy", prevent);
+    document.removeEventListener("cut", prevent);
+    window.onblur = null;
+  }
+}
+
+/* =====================
+   KEYSTROKE LOGGING
+===================== */
 responseEl.addEventListener("keydown", () => {
   keystrokes.push(Date.now());
 });
 
+/* =====================
+   SUBMIT RESPONSE
+===================== */
 document.getElementById("submit").onclick = async () => {
   const stage = stages[stageIndex];
-  const duration = Date.now() - startTime;
   const text = responseEl.value.trim();
+  const duration = Date.now() - startTime;
 
   if (!stage.allowAI && !certifyEl.checked) {
-    alert("You must certify authorship.");
+    alert("You must certify authorship for this stage.");
     return;
   }
 
   if (text.length < 200) {
-    alert("Response too short.");
+    alert("Please write a full paragraph.");
     return;
   }
 
   await supabase.from("responses").insert({
+    participant_id: participantId,
     stage: stage.id,
     prompt: stage.prompt,
     response: text,
@@ -93,15 +125,22 @@ document.getElementById("submit").onclick = async () => {
   });
 
   stageIndex++;
+
   if (stageIndex < stages.length) {
     loadStage();
   } else {
-    document.body.innerHTML = "<h2>Thank you for participating.</h2>";
+    taskScreen.hidden = true;
+    loadQuestionnaire();
   }
 };
 
 document.getElementById("chatSend").onclick = async () => {
-  const msg = chatInput.value;
+  if (!stages[stageIndex].allowAI) return;
+
+  const userMessage = chatInput.value.trim();
+  if (!userMessage) return;
+
+  chatOutput.innerText = "Thinking...";
 
   const res = await fetch("https://ai.hackclub.com/proxy/v1/chat/completions", {
     method: "POST",
@@ -116,7 +155,10 @@ document.getElementById("chatSend").onclick = async () => {
           role: "system",
           content: "You are a writing assistant for a research study.",
         },
-        { role: "user", content: msg },
+        {
+          role: "user",
+          content: userMessage,
+        },
       ],
     }),
   });
@@ -125,4 +167,45 @@ document.getElementById("chatSend").onclick = async () => {
   chatOutput.innerText = data.choices[0].message.content;
 };
 
-loadStage();
+function loadQuestionnaire() {
+  questionnaireScreen.hidden = false;
+  const form = document.getElementById("questionnaire-form");
+  form.innerHTML = "";
+
+  stages.forEach((stage) => {
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <h4>Stage ${stage.id}</h4>
+
+      <label>
+        Perceived difficulty (0–100):
+        <input type="number" min="0" max="100" id="diff-${stage.id}" required>
+      </label><br><br>
+
+      <label>
+        AI usage (0–100):<br>
+        <small>
+          0 = only for editing<br>
+          100 = fully written by AI, did not engage with output
+        </small><br>
+        <input type="number" min="0" max="100" id="ai-${stage.id}" required>
+      </label>
+      <hr>
+    `;
+    form.appendChild(div);
+  });
+}
+
+document.getElementById("submit-questionnaire").onclick = async () => {
+  for (const stage of stages) {
+    await supabase.from("questionnaire").insert({
+      participant_id: participantId,
+      stage: stage.id,
+      difficulty: Number(document.getElementById(`diff-${stage.id}`).value),
+      perceived_ai_use: Number(document.getElementById(`ai-${stage.id}`).value),
+    });
+  }
+
+  document.body.innerHTML =
+    "<h2>Thank you for participating in the study.</h2>";
+};
