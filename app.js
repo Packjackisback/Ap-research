@@ -149,26 +149,22 @@ document.getElementById("chatSend").onclick = async () => {
 
   chatOutput.innerText = "Thinking...";
 
-  const res = await fetch("https://ai.hackclub.com/proxy/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${HACKCLUB_API_KEY}`,
-      "Content-Type": "application/json",
+  const res = await fetch(
+    "https://aifumynkocrvizeccwtb.supabase.co/functions/v1/quick-action",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: "system",
+            content: "You are a writing assistant for a research study.",
+          },
+          { role: "user", content: userMessage },
+        ],
+      }),
     },
-    body: JSON.stringify({
-      model: "openai/gpt-5-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a writing assistant for a research study.",
-        },
-        {
-          role: "user",
-          content: userMessage,
-        },
-      ],
-    }),
-  });
+  );
 
   const data = await res.json();
   chatOutput.innerText = data.choices[0].message.content;
