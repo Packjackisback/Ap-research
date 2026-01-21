@@ -16,7 +16,7 @@ const stages = [
   },
   {
     id: 2,
-    prompt: "Discuss your views on remote work. You may use the chatbot below.",
+    prompt: "Discuss your views on remote work. You may (and are encouraged) to use AI.",
     allowAI: true,
   },
   {
