@@ -40,10 +40,6 @@ const responseEl = document.getElementById("response");
 const certifyEl = document.getElementById("certify");
 const certifyBox = document.getElementById("certify-box");
 
-const chatbotEl = document.getElementById("chatbot");
-const chatInput = document.getElementById("chatInput");
-const chatOutput = document.getElementById("chatOutput");
-
 document.getElementById("consent-continue").onclick = () => {
   if (!document.getElementById("consent-checkbox").checked) {
     alert("You must consent to participate.");
@@ -66,13 +62,10 @@ function loadStage() {
 
   responseEl.value = "";
   certifyEl.checked = false;
-  chatInput.value = "";
-  chatOutput.innerText = "";
 
   keystrokes = [];
   startTime = Date.now();
 
-  chatbotEl.hidden = !stage.allowAI;
   certifyBox.hidden = stage.allowAI;
 
   if (!stage.allowAI) {
